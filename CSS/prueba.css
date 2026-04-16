@@ -1,0 +1,69 @@
+:root{
+    --color-rosa: #FF3169;
+    --color-azul: #00A0CF;
+    --color-morado: #9F49A3;
+    --color-turquesa: #00B4B0;
+    --color-naranja: #FFA523;
+    --color-gris-oscuro: #3C3C3C;
+
+    --color-fondo: #F5F7FB;
+    --color-blanco: #FFFFFF;
+    --color-borde: #E5E7EB;
+    --color-texto: #2A2F35;
+    --color-texto-secundario: #667085;
+
+    --sombra-suave: 0 10px 30px rgba(44, 62, 80, 0.10); /*comentario*/
+    --sombra-media: 0 16px 35px rgba(44, 62, 80, 0.14);
+    --radio-lg: 20px;
+    --radio-md: 14px;
+    --radio-sm: 10px;
+}
+
+
+
+#cam_titulo{
+    width: 95%;
+    margin: 95px auto 0 auto;
+    background: linear-gradient(135deg, var(--color-morado), var(--color-azul));
+    border-radius: var(--radio-lg) var(--radio-lg) 0 0;
+    padding: 24px 28px;
+    box-shadow: var(--sombra-media);
+    position: relative;
+    overflow: hidden;
+
+}
+
+#cam_titulo::before{
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 140px;
+    height: 140px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 50%;
+
+
+}
+
+#cam_titulo::after{
+    content: '';
+    position: absolute;
+    bottom: -45px;
+    left: -25px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+
+#cam_titulo span{
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    color: var(--color-blanco);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+
+}
