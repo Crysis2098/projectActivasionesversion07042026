@@ -1,31 +1,56 @@
 formulario:
 
-<input 
-    type="number"
-    name="rgus"
-    class="caja-inputs"
-    value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
-    min="1"
-    max="100"
-    step="1"
-    required
->
+<div class="form-field">
+    <label for="rgus_<?php echo (int)$venta['id']; ?>">
+        <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+    </label>
+    <input
+        type="number"
+        name="rgus"
+        id="rgus_<?php echo (int)$venta['id']; ?>"
+        class="caja-inputs"
+        value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+        min="0"
+        step="1"
+        required
+    >
+</div>
 
+AJAX/validacion/guardar.php
+$rgus = isset($_POST['rgus']) ? (int)$_POST['rgus'] : -1;
 
-  guardar_validacion.php
-  $rgus = isset($_POST['rgus']) ? (int)$_POST['rgus'] : 0;
-
-if ($rgus <= 0) {
-    responder(false, 'El valor de ventas no es válido.');
+if ($rgus < 0) {
+    responder(false, 'La cantidad no puede ser menor a cero.');
 }
 
+$resultado = guardar_validacion_venta($conn, [
+    'id_venta' => $id_venta,
+    'id_asignado_a' => $id_asignado_a,
+    'validado_por' => $id_asignado_a,
+    'estatus' => $estatus,
+    'rgus' => $rgus,
+    'comentarios_validador' => $comentarios_validador
+]);
 
 model:
 
-UPDATE tbl_activaciones_ventas
-SET 
-    estatus = ?,
-    comentarios_rgus = ?,
-    rgus = ?, -- 👈 ESTE ES EL NUEVO
-    fecha_validacion_termina = GETDATE()
-WHERE id = ?
+function guardar_validacion_venta($conn, array $data)
+{
+    $sql = "UPDATE tbl_activaciones_ventas
+            SET
+                estatus = ?,
+                rgus = ?,
+                comentarios_rgus = ?,
+                validado_por = ?,
+                fecha_validacion_termina = GETDATE()
+            WHERE id = ?
+              AND id_asignado_a = ?";
+
+    $params = [
+        (int)$data['estatus'],
+        (int)$data['rgus'],
+        $data['comentarios_validador'],
+        (int)$data['validado_por'],
+        (int)$data['id_venta'],
+        (int)$data['id_asignado_a']
+    ];
