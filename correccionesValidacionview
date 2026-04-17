@@ -1,0 +1,31 @@
+formulario:
+
+<input 
+    type="number"
+    name="rgus"
+    class="caja-inputs"
+    value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+    min="1"
+    max="100"
+    step="1"
+    required
+>
+
+
+  guardar_validacion.php
+  $rgus = isset($_POST['rgus']) ? (int)$_POST['rgus'] : 0;
+
+if ($rgus <= 0) {
+    responder(false, 'El valor de ventas no es válido.');
+}
+
+
+model:
+
+UPDATE tbl_activaciones_ventas
+SET 
+    estatus = ?,
+    comentarios_rgus = ?,
+    rgus = ?, -- 👈 ESTE ES EL NUEVO
+    fecha_validacion_termina = GETDATE()
+WHERE id = ?
