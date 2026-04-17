@@ -54,3 +54,728 @@ function guardar_validacion_venta($conn, array $data)
         (int)$data['id_venta'],
         (int)$data['id_asignado_a']
     ];
+
+
+
+scripts involucrados:
+
+validar_ventas.php:
+<?php
+if (!isset($ventas_validacion)) {
+    $ventas_validacion = [
+        'pendientes' => [],
+        'aprobadas' => [],
+        'rechazadas' => []
+    ];
+}
+
+if (!isset($id_empleado)) {
+    $id_empleado = 0;
+}
+?>
+
+<link rel="stylesheet" href="ACTIVACIONES_SL/CSS/campanas.css">
+
+<div id="cam_titulo">
+    <span>Validación de ventas</span>
+</div>
+
+<div id="contenido_formulario">
+    <section class="form-card">
+        <div class="form-card-header">
+            <h2>Ventas del día por estatus</h2>
+            <p>Las validaciones corresponden únicamente a ventas capturadas el día de hoy.</p>
+        </div>
+
+        <div class="validacion-bloques">
+
+            <div class="validacion-seccion">
+                <div class="validacion-titulo">Pendientes</div>
+                <div class="tabla-responsive">
+                    <table class="tabla-consulta-campanas tabla-validacion">
+                        <thead>
+                            <tr>
+                                <th>Cuenta</th>
+                                <th>Orden Servicio</th>
+                                <th>Valor</th>
+                                <th>Fecha captura</th>
+                                <th>Ejecutivo</th>
+                                <th>Supervisor</th>
+                                <th>Comentarios ADMON</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($ventas_validacion['pendientes'])): ?>
+                                <?php foreach ($ventas_validacion['pendientes'] as $venta): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($venta['cuenta']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['orden_servicio']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$venta['rgus']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['fecha_captura'] . ' ' . $venta['hora_captura']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_supervisor']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['observaciones']); ?></td>
+                                        <td>
+                                            <button
+                                                type="button"
+                                                class="btn_secundario btn-validar-venta"
+                                                data-id-venta="<?php echo (int)$venta['id']; ?>"
+                                                data-id-asignado="<?php echo (int)$venta['id_asignado_a']; ?>"
+                                                data-cuenta="<?php echo htmlspecialchars($venta['cuenta']); ?>"
+                                                data-orden="<?php echo htmlspecialchars($venta['orden_servicio']); ?>"
+                                                data-ejecutivo="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>"
+                                                data-hora="<?php echo htmlspecialchars($venta['hora_captura']); ?>"
+                                                data-indicador="<?php echo htmlspecialchars($venta['texto_indicador']); ?>"
+                                                data-valor="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+                                                data-comentarios="<?php echo htmlspecialchars($venta['comentarios_validador']); ?>"
+                                                data-estatus="<?php echo (int)$venta['estatus']; ?>"
+                                            >
+                                                Validar esta venta
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="fila-formulario-validacion" id="fila-validacion-<?php echo (int)$venta['id']; ?>" style="display:none;">
+                                        <td colspan="8">
+                                            <div class="validacion-form-box">
+                                                <div class="validacion-form-header">
+                                                    Validar venta, este es el indicador: <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+                                                </div>
+
+                                                <form class="form-validacion-venta" data-id-venta="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_venta" value="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_asignado_a" value="<?php echo (int)$venta['id_asignado_a']; ?>">
+                                                    <input type="hidden" name="id_validador_actual" value="<?php echo (int)$id_empleado; ?>">
+
+                                                    <div class="form-grid validacion-form-grid">
+                                                        <div class="form-field">
+                                                            <label>Cuenta</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['cuenta']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Orden Servicio</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['orden_servicio']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Ejecutivo</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Horario</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['hora_captura']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label for="estatus_<?php echo (int)$venta['id']; ?>">Estado</label>
+                                                            <select name="estatus" id="estatus_<?php echo (int)$venta['id']; ?>" class="caja-select" required>
+                                                                <option value="" selected disabled>Seleccionar estado</option>
+                                                                <option value="1">Aprobado</option>
+                                                                <option value="2">Rechazado</option>
+                                                            </select>
+                                                        </div>
+
+<div class="form-field">
+    <label for="rgus_<?php echo (int)$venta['id']; ?>">
+        <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+    </label>
+    <input
+        type="number"
+        name="rgus"
+        id="rgus_<?php echo (int)$venta['id']; ?>"
+        class="caja-inputs"
+        value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+        min="0"
+        step="1"
+        required
+    >
+</div>
+
+                                                        <div class="form-field form-field-full">
+                                                            <label for="comentarios_validador_<?php echo (int)$venta['id']; ?>">Comentarios</label>
+                                                            <textarea
+                                                                name="comentarios_validador"
+                                                                id="comentarios_validador_<?php echo (int)$venta['id']; ?>"
+                                                                class="caja-inputs"
+                                                                rows="3"
+                                                                placeholder="Comentarios del validador"
+                                                            ><?php echo htmlspecialchars($venta['comentarios_validador']); ?></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="validacion-acciones">
+                                                        <button type="submit" class="btn_principal">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="8" class="tabla-vacia-celda">No hay ventas pendientes.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="validacion-seccion">
+                <div class="validacion-titulo">Aprobadas</div>
+                <div class="tabla-responsive">
+                    <table class="tabla-consulta-campanas tabla-validacion">
+                        <thead>
+                            <tr>
+                                <th>Cuenta</th>
+                                <th>Orden Servicio</th>
+                                <th>Valor</th>
+                                <th>Fecha captura</th>
+                                <th>Ejecutivo</th>
+                                <th>Supervisor</th>
+                                <th>Comentarios</th>
+                                <th>Validado por</th>
+                                <th>Fecha validación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($ventas_validacion['aprobadas'])): ?>
+                                <?php foreach ($ventas_validacion['aprobadas'] as $venta): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($venta['cuenta']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['orden_servicio']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$venta['rgus']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['fecha_captura'] . ' ' . $venta['hora_captura']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_supervisor']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['comentarios_validador']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_validado_por']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['fecha_validacion_termina'] ?: $venta['fecha_validacion']); ?></td>
+                                        <td>
+                                            <button
+                                                type="button"
+                                                class="btn_secundario btn-validar-venta"
+                                                data-id-venta="<?php echo (int)$venta['id']; ?>"
+                                                data-id-asignado="<?php echo (int)$venta['id_asignado_a']; ?>"
+                                                data-cuenta="<?php echo htmlspecialchars($venta['cuenta']); ?>"
+                                                data-orden="<?php echo htmlspecialchars($venta['orden_servicio']); ?>"
+                                                data-ejecutivo="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>"
+                                                data-hora="<?php echo htmlspecialchars($venta['hora_captura']); ?>"
+                                                data-indicador="<?php echo htmlspecialchars($venta['texto_indicador']); ?>"
+                                                data-valor="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+                                                data-comentarios="<?php echo htmlspecialchars($venta['comentarios_validador']); ?>"
+                                                data-estatus="<?php echo (int)$venta['estatus']; ?>"
+                                            >
+                                                Validar esta venta
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="fila-formulario-validacion" id="fila-validacion-<?php echo (int)$venta['id']; ?>" style="display:none;">
+                                        <td colspan="10">
+                                            <div class="validacion-form-box">
+                                                <div class="validacion-form-header">
+                                                    Validar venta, este es el indicador: <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+                                                </div>
+
+                                                <form class="form-validacion-venta" data-id-venta="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_venta" value="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_asignado_a" value="<?php echo (int)$venta['id_asignado_a']; ?>">
+                                                    <input type="hidden" name="id_validador_actual" value="<?php echo (int)$id_empleado; ?>">
+
+                                                    <div class="form-grid validacion-form-grid">
+                                                        <div class="form-field">
+                                                            <label>Cuenta</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['cuenta']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Orden Servicio</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['orden_servicio']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Ejecutivo</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Horario</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['hora_captura']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label for="estatus_<?php echo (int)$venta['id']; ?>">Estado</label>
+                                                            <select name="estatus" id="estatus_<?php echo (int)$venta['id']; ?>" class="caja-select" required>
+                                                                <option value="1" <?php echo ((int)$venta['estatus'] === 1) ? 'selected' : ''; ?>>Aprobado</option>
+                                                                <option value="2" <?php echo ((int)$venta['estatus'] === 2) ? 'selected' : ''; ?>>Rechazado</option>
+                                                            </select>
+                                                        </div>
+
+<div class="form-field">
+    <label for="rgus_<?php echo (int)$venta['id']; ?>">
+        <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+    </label>
+    <input
+        type="number"
+        name="rgus"
+        id="rgus_<?php echo (int)$venta['id']; ?>"
+        class="caja-inputs"
+        value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+        min="0"
+        step="1"
+        required
+    >
+</div>
+
+                                                        <div class="form-field form-field-full">
+                                                            <label for="comentarios_validador_<?php echo (int)$venta['id']; ?>">Comentarios</label>
+                                                            <textarea
+                                                                name="comentarios_validador"
+                                                                id="comentarios_validador_<?php echo (int)$venta['id']; ?>"
+                                                                class="caja-inputs"
+                                                                rows="3"
+                                                                placeholder="Comentarios del validador"
+                                                            ><?php echo htmlspecialchars($venta['comentarios_validador']); ?></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="validacion-acciones">
+                                                        <button type="submit" class="btn_principal">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="10" class="tabla-vacia-celda">No hay ventas aprobadas.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="validacion-seccion">
+                <div class="validacion-titulo">Rechazadas</div>
+                <div class="tabla-responsive">
+                    <table class="tabla-consulta-campanas tabla-validacion">
+                        <thead>
+                            <tr>
+                                <th>Cuenta</th>
+                                <th>Orden Servicio</th>
+                                <th>Valor</th>
+                                <th>Fecha captura</th>
+                                <th>Ejecutivo</th>
+                                <th>Supervisor</th>
+                                <th>Comentarios</th>
+                                <th>Validado por</th>
+                                <th>Fecha validación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($ventas_validacion['rechazadas'])): ?>
+                                <?php foreach ($ventas_validacion['rechazadas'] as $venta): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($venta['cuenta']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['orden_servicio']); ?></td>
+                                        <td><?php echo htmlspecialchars((string)$venta['rgus']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['fecha_captura'] . ' ' . $venta['hora_captura']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_supervisor']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['comentarios_validador']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['nombre_validado_por']); ?></td>
+                                        <td><?php echo htmlspecialchars($venta['fecha_validacion_termina'] ?: $venta['fecha_validacion']); ?></td>
+                                        <td>
+                                            <button
+                                                type="button"
+                                                class="btn_secundario btn-validar-venta"
+                                                data-id-venta="<?php echo (int)$venta['id']; ?>"
+                                                data-id-asignado="<?php echo (int)$venta['id_asignado_a']; ?>"
+                                                data-cuenta="<?php echo htmlspecialchars($venta['cuenta']); ?>"
+                                                data-orden="<?php echo htmlspecialchars($venta['orden_servicio']); ?>"
+                                                data-ejecutivo="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>"
+                                                data-hora="<?php echo htmlspecialchars($venta['hora_captura']); ?>"
+                                                data-indicador="<?php echo htmlspecialchars($venta['texto_indicador']); ?>"
+                                                data-valor="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+                                                data-comentarios="<?php echo htmlspecialchars($venta['comentarios_validador']); ?>"
+                                                data-estatus="<?php echo (int)$venta['estatus']; ?>"
+                                            >
+                                                Validar esta venta
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="fila-formulario-validacion" id="fila-validacion-<?php echo (int)$venta['id']; ?>" style="display:none;">
+                                        <td colspan="10">
+                                            <div class="validacion-form-box">
+                                                <div class="validacion-form-header">
+                                                    Validar venta, este es el indicador: <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+                                                </div>
+
+                                                <form class="form-validacion-venta" data-id-venta="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_venta" value="<?php echo (int)$venta['id']; ?>">
+                                                    <input type="hidden" name="id_asignado_a" value="<?php echo (int)$venta['id_asignado_a']; ?>">
+                                                    <input type="hidden" name="id_validador_actual" value="<?php echo (int)$id_empleado; ?>">
+
+                                                    <div class="form-grid validacion-form-grid">
+                                                        <div class="form-field">
+                                                            <label>Cuenta</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['cuenta']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Orden Servicio</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['orden_servicio']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Ejecutivo</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['nombre_ejecutivo']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label>Horario</label>
+                                                            <input type="text" class="caja-inputs" value="<?php echo htmlspecialchars($venta['hora_captura']); ?>" disabled>
+                                                        </div>
+
+                                                        <div class="form-field">
+                                                            <label for="estatus_<?php echo (int)$venta['id']; ?>">Estado</label>
+                                                            <select name="estatus" id="estatus_<?php echo (int)$venta['id']; ?>" class="caja-select" required>
+                                                                <option value="1" <?php echo ((int)$venta['estatus'] === 1) ? 'selected' : ''; ?>>Aprobado</option>
+                                                                <option value="2" <?php echo ((int)$venta['estatus'] === 2) ? 'selected' : ''; ?>>Rechazado</option>
+                                                            </select>
+                                                        </div>
+
+<div class="form-field">
+    <label for="rgus_<?php echo (int)$venta['id']; ?>">
+        <?php echo htmlspecialchars($venta['texto_indicador']); ?>
+    </label>
+    <input
+        type="number"
+        name="rgus"
+        id="rgus_<?php echo (int)$venta['id']; ?>"
+        class="caja-inputs"
+        value="<?php echo htmlspecialchars((string)$venta['rgus']); ?>"
+        min="0"
+        step="1"
+        required
+    >
+</div>
+
+                                                        <div class="form-field form-field-full">
+                                                            <label for="comentarios_validador_<?php echo (int)$venta['id']; ?>">Comentarios</label>
+                                                            <textarea
+                                                                name="comentarios_validador"
+                                                                id="comentarios_validador_<?php echo (int)$venta['id']; ?>"
+                                                                class="caja-inputs"
+                                                                rows="3"
+                                                                placeholder="Comentarios del validador"
+                                                            ><?php echo htmlspecialchars($venta['comentarios_validador']); ?></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="validacion-acciones">
+                                                        <button type="submit" class="btn_principal">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="10" class="tabla-vacia-celda">No hay ventas rechazadas.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+<div id="toast_container" class="toast-container"></div>
+
+<script src="ACTIVACIONES_SL/JS/validacion.js"></script>
+
+guardar.php:
+<?php
+
+header('Content-Type: application/json; charset=utf-8');
+
+require_once __DIR__ . '/../../../CONEXION_CON_UTF8.PHP';
+require_once __DIR__ . '/../../MODELS/validacion_model.php';
+
+function responder($ok, $mensaje, $extra = [])
+{
+    echo json_encode(array_merge([
+        'ok' => $ok,
+        'mensaje' => $mensaje
+    ], $extra));
+    exit;
+}
+
+function limpiar_texto($valor)
+{
+    return trim((string)$valor);
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    responder(false, 'Método no permitido.');
+}
+
+$id_venta = isset($_POST['id_venta']) ? (int)$_POST['id_venta'] : 0;
+$id_asignado_a = isset($_POST['id_asignado_a']) ? (int)$_POST['id_asignado_a'] : 0;
+$estatus = isset($_POST['estatus']) ? (int)$_POST['estatus'] : -1;
+$rgus = isset($_POST['rgus']) ? (int)$_POST['rgus'] : -1;
+$comentarios_validador = isset($_POST['comentarios_validador']) ? limpiar_texto($_POST['comentarios_validador']) : '';
+
+if ($id_venta <= 0 || $id_asignado_a <= 0) {
+    responder(false, 'Datos insuficientes para guardar la validación.');
+}
+
+if (!in_array($estatus, [1, 2], true)) {
+    responder(false, 'Selecciona un estatus válido.');
+}
+
+if ($rgus < 0) {
+    responder(false, 'La cantidad no puede ser menor a cero.');
+}
+
+$resultado = guardar_validacion_venta($conn, [
+    'id_venta' => $id_venta,
+    'id_asignado_a' => $id_asignado_a,
+    'validado_por' => $id_asignado_a,
+    'estatus' => $estatus,
+    'rgus' => $rgus,
+    'comentarios_validador' => $comentarios_validador
+]);
+
+if ($resultado !== true) {
+    responder(false, 'No fue posible guardar la validación.', [
+        'debug' => $resultado
+    ]);
+}
+
+responder(true, 'La validación se guardó correctamente.');
+
+validacion:model.php:
+<?php
+
+function obtener_texto_indicador_validacion($id_indicador)
+{
+    switch ((int)$id_indicador) {
+        case 3:
+            return 'Suscriptor nuevo';
+        case 4:
+            return 'Nueva línea';
+        case 6:
+            return 'Nuevo complemento';
+        default:
+            return 'Valor';
+    }
+}
+
+function obtener_ventas_validacion_del_dia($conn, $tipo_usuario, $callcenter_usuario)
+{
+    $resultado = [
+        'pendientes' => [],
+        'aprobadas' => [],
+        'rechazadas' => []
+    ];
+
+    $sql = "SELECT
+                v.id,
+                v.id_empleado,
+                v.id_supervisor,
+                v.campania,
+                v.modalidad,
+                v.cuenta,
+                v.orden_servicio,
+                v.estatus,
+                v.comentarios,
+                v.premio,
+                v.incentivo,
+                v.fecha,
+                v.validado_por,
+                v.fecha_validacion,
+                v.fecha_validacion_termina,
+                v.id_activacion,
+                v.callcenter,
+                v.asignado_a,
+                v.rgus,
+                v.comentarios_rgus,
+                v.folio_canje,
+                v.id_asignado_a,
+
+                e.nombre AS nombre_ejecutivo,
+                s.nombre AS nombre_supervisor,
+                vv.nombre AS nombre_validado_por,
+                aa.nombre AS nombre_asignado_a,
+
+                c.id_indicador,
+                c.observaciones,
+                p.programadores,
+                cc.callcenter AS nombre_callcenter,
+
+                CONVERT(varchar(10), v.fecha_subida, 120) AS fecha_captura,
+                CONVERT(varchar(5), v.fecha_subida, 108) AS hora_captura,
+                CONVERT(varchar(16), v.fecha_validacion, 120) AS fecha_validacion_texto,
+                CONVERT(varchar(16), v.fecha_validacion_termina, 120) AS fecha_validacion_termina_texto
+            FROM tbl_activaciones_ventas v
+            LEFT JOIN tbl_empleados e
+                ON e.id_empleado = v.id_empleado
+            LEFT JOIN tbl_empleados s
+                ON s.id_empleado = v.id_supervisor
+            LEFT JOIN tbl_empleados vv
+                ON vv.id_empleado = v.validado_por
+            LEFT JOIN tbl_empleados aa
+                ON aa.id_empleado = v.id_asignado_a
+            LEFT JOIN tbl_activaciones_sl_campanas c
+                ON c.id_campana = v.id_activacion
+            LEFT JOIN tbl_activaciones_programadores p
+                ON p.id = c.id_programador
+            LEFT JOIN tbl_callcenter cc
+                ON cc.id_callcenter = v.callcenter
+            WHERE CONVERT(date, v.fecha_subida) = CONVERT(date, GETDATE())
+              AND v.estatus IN (0,1,2)";
+
+    $params = [];
+
+    if ($tipo_usuario === 'administrador_callcenter') {
+        $sql .= " AND v.callcenter = ?";
+        $params[] = (int)$callcenter_usuario;
+    }
+
+    $sql .= " ORDER BY
+                CASE v.estatus
+                    WHEN 0 THEN 1
+                    WHEN 1 THEN 2
+                    WHEN 2 THEN 3
+                    ELSE 4
+                END,
+                v.fecha_subida DESC,
+                v.id DESC";
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        return $resultado;
+    }
+
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $registro = [
+            'id' => (int)$row['id'],
+            'id_empleado' => (int)$row['id_empleado'],
+            'id_supervisor' => $row['id_supervisor'] !== null ? (int)$row['id_supervisor'] : null,
+            'campania' => $row['campania'] ?: '',
+            'modalidad' => $row['modalidad'] ?: '',
+            'cuenta' => $row['cuenta'] ?: '',
+            'orden_servicio' => $row['orden_servicio'] ?: '',
+            'estatus' => (int)$row['estatus'],
+            'comentarios_admin' => $row['comentarios'] ?: '',
+            'incentivo' => $row['incentivo'] ?: '',
+            'validado_por' => $row['validado_por'] !== null ? (int)$row['validado_por'] : null,
+            'fecha_validacion' => $row['fecha_validacion_texto'] ?: '',
+            'fecha_validacion_termina' => $row['fecha_validacion_termina_texto'] ?: '',
+            'id_activacion' => $row['id_activacion'] !== null ? (int)$row['id_activacion'] : null,
+            'callcenter' => $row['callcenter'] !== null ? (int)$row['callcenter'] : null,
+            'nombre_callcenter' => $row['nombre_callcenter'] ?: '',
+            'rgus' => $row['rgus'] !== null ? (int)$row['rgus'] : 0,
+            'comentarios_validador' => $row['comentarios_rgus'] ?: '',
+            'folio_canje' => $row['folio_canje'] ?: '',
+            'id_asignado_a' => $row['id_asignado_a'] !== null ? (int)$row['id_asignado_a'] : null,
+            'nombre_ejecutivo' => $row['nombre_ejecutivo'] ?: '',
+            'nombre_supervisor' => $row['nombre_supervisor'] ?: '',
+            'nombre_validado_por' => $row['nombre_validado_por'] ?: '',
+            'nombre_asignado_a' => $row['nombre_asignado_a'] ?: '',
+            'id_indicador' => $row['id_indicador'] !== null ? (int)$row['id_indicador'] : 0,
+            'observaciones' => $row['observaciones'] ?: '',
+            'texto_indicador' => obtener_texto_indicador_validacion($row['id_indicador']),
+            'programador' => $row['programadores'] ?: $row['campania'],
+            'fecha_captura' => $row['fecha_captura'] ?: '',
+            'hora_captura' => $row['hora_captura'] ?: ''
+        ];
+
+        if ($registro['estatus'] === 0) {
+            $resultado['pendientes'][] = $registro;
+        } elseif ($registro['estatus'] === 1) {
+            $resultado['aprobadas'][] = $registro;
+        } elseif ($registro['estatus'] === 2) {
+            $resultado['rechazadas'][] = $registro;
+        }
+    }
+
+    return $resultado;
+}
+
+function asignar_venta_validacion($conn, $id_venta, $id_validador)
+{
+    $sql = "UPDATE tbl_activaciones_ventas
+            SET
+                id_asignado_a = ?,
+                validado_por = ?,
+                fecha_validacion = GETDATE()
+            WHERE id = ?
+              AND estatus IN (0,1,2)
+              AND id_asignado_a IS NULL";
+
+    $params = [
+        (int)$id_validador,
+        (int)$id_validador,
+        (int)$id_venta
+    ];
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        return [
+            'ok' => false,
+            'fase' => 'asignar_venta',
+            'errores' => sqlsrv_errors()
+        ];
+    }
+
+    return true;
+}
+
+function guardar_validacion_venta($conn, array $data)
+{
+    $sql = "UPDATE tbl_activaciones_ventas
+            SET
+                estatus = ?,
+                rgus = ?,
+                comentarios_rgus = ?,
+                validado_por = ?,
+                fecha_validacion_termina = GETDATE()
+            WHERE id = ?
+              AND id_asignado_a = ?";
+
+    $params = [
+        (int)$data['estatus'],
+        (int)$data['rgus'],
+        $data['comentarios_validador'],
+        (int)$data['validado_por'],
+        (int)$data['id_venta'],
+        (int)$data['id_asignado_a']
+    ];
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        return [
+            'ok' => false,
+            'fase' => 'guardar_validacion',
+            'errores' => sqlsrv_errors()
+        ];
+    }
+
+    return true;
+}
